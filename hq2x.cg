@@ -26,6 +26,14 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+const static half3x3 yuv = half3x3(0.299, 0.587, 0.114, -0.169, -0.331, 0.499, 0.499, -0.418, -0.0813);
+const static float3 yuv_threshold = float4(30.0, 7.0, 6.0);
+
+bool yuv_diff(float3 yuv1, float3 yuv2) {
+	bool3 res = abs(yuv1 - yuv2) > yuv_threshold;
+    return res.x || res.y || res.z;
+}
+
 struct input
 {
 	half2 video_size;
@@ -83,7 +91,7 @@ out_vertex main_vertex
 
 
 /*    FRAGMENT SHADER    */
-float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, uniform input IN) : COLOR
+float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, uniform input IN, uniform sampler2D LUT : TEXUNIT8) : COLOR
 {
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
 
@@ -98,6 +106,22 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	half3 w7  = tex2D(decal, VAR.t3.xw).rgb;
 	half3 w8  = tex2D(decal, VAR.t3.yw).rgb;
 	half3 w9  = tex2D(decal, VAR.t3.zw).rgb;
+
+	float3 yuv1 = mul(yuv, w1);
+	float3 yuv2 = mul(yuv, w2);
+	float3 yuv3 = mul(yuv, w3);
+
+	float3 yuv4 = mul(yuv, w4);
+	float3 yuv5 = mul(yuv, w5);
+	float3 yuv6 = mul(yuv, w6);
+
+	float3 yuv7 = mul(yuv, w7);
+	float3 yuv8 = mul(yuv, w8);
+	float3 yuv9 = mul(yuv, w9);
+
+	bool3x3 pattern = bool3x3(yuv_diff(w5, w1), yuv_diff(w5, w2), yuv_diff(w5, w3),
+							  yuv_diff(w5, w4), false,            yuv_diff(w5, w6),
+							  yuv_diff(w5, w7), yuv_diff(w5, w8), yuv_diff(w5, w9));
 
 	return float4(res, 1.0);
 }

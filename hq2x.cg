@@ -94,6 +94,8 @@ out_vertex main_vertex
 float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, uniform input IN, uniform sampler2D LUT : TEXUNIT8) : COLOR
 {
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
+	bool2 quad = fp > 0.5;
+	index.y = dot(quad, float2(2, 4));
 
 	half3 w1  = tex2D(decal, VAR.t1.xw).rgb;
 	half3 w2  = tex2D(decal, VAR.t1.yw).rgb;
@@ -119,9 +121,29 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	float3 yuv8 = mul(yuv, w8);
 	float3 yuv9 = mul(yuv, w9);
 
-	bool3x3 pattern = bool3x3(yuv_diff(w5, w1), yuv_diff(w5, w2), yuv_diff(w5, w3),
-							  yuv_diff(w5, w4), false,            yuv_diff(w5, w6),
-							  yuv_diff(w5, w7), yuv_diff(w5, w8), yuv_diff(w5, w9));
+	bool3x2 pattern;
+	float3x4 pixels;
+	if (quad.x && quad.y) {
+		pixels = float3x4(w5, w6, w8, w9);
+		pattern = bool3x2(yuv_diff(yuv5, yuv6), yuv_diff(yuv5, yuv8), yuv_diff(yuv5, yuv9),
+						  yuv_diff(yuv6, yuv2), yuv_diff(yuv8, yuv4), yuv_diff(yuv8, yuv6));
+	} else if (quad.x) {
+		pixels = float3x4(w5, w2, w3, w6);
+		pattern = bool3x2(yuv_diff(yuv5, yuv2), yuv_diff(yuv5, yuv3), yuv_diff(yuv5, yuv6),
+						  yuv_diff(yuv2, yuv4), yuv_diff(yuv8, yuv6), yuv_diff(yuv8, yuv4));
+	} else if (quad.y) {
+		pixels = float3x4(w5, w4, w7, w8);
+		pattern = bool3x2(yuv_diff(yuv5, yuv4), yuv_diff(yuv5, yuv7), yuv_diff(yuv5, yuv8),
+						  yuv_diff(yuv2, yuv6), yuv_diff(yuv8, yuv4), yuv_diff(yuv4, yuv2));
+	} else {
+		pixels = float3x4(w5, w1, w2, w4);
+		pattern = bool3x2(yuv_diff(yuv5, yuv1), yuv_diff(yuv5, yuv2), yuv_diff(yuv5, yuv4),
+						  yuv_diff(yuv2, yuv6), yuv_diff(yuv8, yuv4), yuv_diff(yuv4, yuv2));
+	}
+
+	index.x = dot(pattern[0], float3(1, 2, 4)) + dot(pattern[1], float3(8, 16, 32));
+	half2 offset = 1.0 / (2.0 * half2(64.0, 4.0));
+	float3 res = mul(pixels, tex2D(LUT, index + offset));
 
 	return float4(res, 1.0);
 }

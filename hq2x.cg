@@ -126,19 +126,19 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	if (quad.x && quad.y) {
 		pixels = float3x4(w5, w6, w8, w9);
 		pattern = bool3x2(yuv_diff(yuv5, yuv6), yuv_diff(yuv5, yuv8), yuv_diff(yuv5, yuv9),
-						  yuv_diff(yuv6, yuv2), yuv_diff(yuv8, yuv4), yuv_diff(yuv8, yuv6));
+						  yuv_diff(yuv6, yuv2), yuv_diff(yuv6, yuv8), yuv_diff(yuv8, yuv4));
 	} else if (quad.x) {
 		pixels = float3x4(w5, w2, w3, w6);
 		pattern = bool3x2(yuv_diff(yuv5, yuv2), yuv_diff(yuv5, yuv3), yuv_diff(yuv5, yuv6),
-						  yuv_diff(yuv2, yuv4), yuv_diff(yuv8, yuv6), yuv_diff(yuv8, yuv4));
+						  yuv_diff(yuv6, yuv2), yuv_diff(yuv6, yuv8), yuv_diff(yuv2, yuv4));
 	} else if (quad.y) {
 		pixels = float3x4(w5, w4, w7, w8);
 		pattern = bool3x2(yuv_diff(yuv5, yuv4), yuv_diff(yuv5, yuv7), yuv_diff(yuv5, yuv8),
-						  yuv_diff(yuv2, yuv6), yuv_diff(yuv8, yuv4), yuv_diff(yuv4, yuv2));
+						  yuv_diff(yuv4, yuv2), yuv_diff(yuv4, yuv8), yuv_diff(yuv8, yuv6));
 	} else {
 		pixels = float3x4(w5, w1, w2, w4);
 		pattern = bool3x2(yuv_diff(yuv5, yuv1), yuv_diff(yuv5, yuv2), yuv_diff(yuv5, yuv4),
-						  yuv_diff(yuv2, yuv6), yuv_diff(yuv8, yuv4), yuv_diff(yuv4, yuv2));
+						  yuv_diff(yuv2, yuv6), yuv_diff(yuv2, yuv4), yuv_diff(yuv4, yuv8));
 	}
 
 	index.x = dot(pattern[0], float3(1, 2, 4)) + dot(pattern[1], float3(8, 16, 32));

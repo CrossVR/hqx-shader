@@ -127,19 +127,19 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	float4x3 pixels;
 	bool3 cross;
 	if (quad.x && quad.y) {
-		index.y = 4;
+		index.y = 3;
 		pixels = float4x3(w5, w6, w8, w9);
 		cross = bool3(yuv_diff(yuv6, yuv2), yuv_diff(yuv6, yuv8), yuv_diff(yuv8, yuv4));
 	} else if (quad.x) {
-		index.y = 2;
+		index.y = 1;
 		pixels = float4x3(w5, w2, w3, w6);
 		cross = bool3(yuv_diff(yuv6, yuv2), yuv_diff(yuv6, yuv8), yuv_diff(yuv2, yuv4));
 	} else if (quad.y) {
-		index.y = 3;
+		index.y = 2;
 		pixels = float4x3(w5, w4, w7, w8);
 		cross = bool3(yuv_diff(yuv4, yuv2), yuv_diff(yuv4, yuv8), yuv_diff(yuv8, yuv6));
 	} else {
-		index.y = 1;
+		index.y = 0;
 		pixels = float4x3(w5, w1, w2, w4);
 		cross = bool3(yuv_diff(yuv2, yuv6), yuv_diff(yuv2, yuv4), yuv_diff(yuv4, yuv8));
 	}
@@ -148,8 +148,9 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	          dot(pattern[1], float3(8, 0, 16)) +
 			  dot(pattern[2], float3(32, 64, 128)) +
 			  dot(cross, float3(256, 512, 1024));
-	half2 offset = 1.0 / (2.0 * half2(2048.0, 4.0));
-	float4 vec = tex2D(LUT, 1.0 / index + offset) * 255.0;
+	half2 step = 1.0 / half2(2048.0, 4.0);
+	half2 offset = step / 2.0;
+	float4 vec = tex2D(LUT, index * step + offset) * 255;
 	float3 res = mul(transpose(pixels), vec);
 
 	return float4(res, 1.0);

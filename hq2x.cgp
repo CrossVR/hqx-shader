@@ -6,5 +6,5 @@ scale_type0 = source
 scale0 = 2.0
 
 textures = LUT
-LUT = lut.png
+LUT = hq2x.png
 LUT_linear = false

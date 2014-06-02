@@ -95,7 +95,7 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 {
 	float2 index;
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
-	bool2 quad = fp > 0.5;
+	half2 quad = floor(fp * 2);
 
 	half3 w1  = tex2D(decal, VAR.t1.xw).rgb;
 	half3 w2  = tex2D(decal, VAR.t1.yw).rgb;
@@ -129,20 +129,17 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	index.x = dot(pattern[0], float3(1, 2, 4)) +
 	          dot(pattern[1], float3(8, 0, 16)) +
 	          dot(pattern[2], float3(32, 64, 128));
-	index.y = dot(cross, float4(1, 2, 4, 8)) * 4.0;
+	index.y = dot(cross, float4(1, 2, 4, 8)) * 4.0 + dot(quad, half2(1, 2));
 
 	float4x3 pixels;
-	if (quad.x && quad.y) {
-		index.y += 3;
-		pixels = float4x3(w5, w6, w8, w9);
-	} else if (quad.x) {
-		index.y += 1;
-		pixels = float4x3(w5, w2, w3, w6);
-	} else if (quad.y) {
-		index.y += 2;
-		pixels = float4x3(w5, w4, w7, w8);
+	if (quad.x == 0 && quad.y == 0) {
+		pixels = float4x3(w5, w1, w2, w4); // PIXEL00
+	} else if (quad.x == 1 && quad.y == 0) {
+		pixels = float4x3(w5, w2, w3, w6); // PIXEL01
+	} else if (quad.x == 0 && quad.y == 1) {
+		pixels = float4x3(w5, w4, w7, w8); // PIXEL10
 	} else {
-		pixels = float4x3(w5, w1, w2, w4);
+		pixels = float4x3(w5, w6, w8, w9); // PIXEL11
 	}
 
 	half2 step = 1.0 / half2(256.0, 64.0);

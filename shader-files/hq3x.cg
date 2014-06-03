@@ -28,13 +28,12 @@
 
 #define SCALE 3
 
-const static half3x3 yuv = half3x3(0.299, 0.587, 0.114, -0.169, -0.331, 0.499, 0.499, -0.418, -0.0813);
-const static float3 yuv_threshold = float3(1.0 / 48.0, 1.0 / 7.0, 1.0 / 6.0);
-
-bool yuv_diff(float3 yuv1, float3 yuv2) {
-	bool3 res = abs(yuv1 - yuv2) > yuv_threshold;
-	return res.x || res.y || res.z;
-}
+struct orig
+{
+	float2 tex_coord;
+	uniform float2 texture_size;
+	uniform sampler2D texture;
+};
 
 struct input
 {
@@ -93,45 +92,24 @@ out_vertex main_vertex
 
 
 /*    FRAGMENT SHADER    */
-float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, uniform input IN, uniform sampler2D LUT : TEXUNIT1) : COLOR
+float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, orig ORIG, uniform input IN, uniform sampler2D LUT : TEXUNIT1) : COLOR
 {
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
 	half2 quad = floor(fp * SCALE);
 
-	half3 w1  = tex2D(decal, VAR.t1.xw).rgb;
-	half3 w2  = tex2D(decal, VAR.t1.yw).rgb;
-	half3 w3  = tex2D(decal, VAR.t1.zw).rgb;
+	half3 w1  = tex2D(ORIG.texture, VAR.t1.xw).rgb;
+	half3 w2  = tex2D(ORIG.texture, VAR.t1.yw).rgb;
+	half3 w3  = tex2D(ORIG.texture, VAR.t1.zw).rgb;
 
-	half3 w4  = tex2D(decal, VAR.t2.xw).rgb;
-	half3 w5  = tex2D(decal, VAR.t2.yw).rgb;
-	half3 w6  = tex2D(decal, VAR.t2.zw).rgb;
+	half3 w4  = tex2D(ORIG.texture, VAR.t2.xw).rgb;
+	half3 w5  = tex2D(ORIG.texture, VAR.t2.yw).rgb;
+	half3 w6  = tex2D(ORIG.texture, VAR.t2.zw).rgb;
 
-	half3 w7  = tex2D(decal, VAR.t3.xw).rgb;
-	half3 w8  = tex2D(decal, VAR.t3.yw).rgb;
-	half3 w9  = tex2D(decal, VAR.t3.zw).rgb;
+	half3 w7  = tex2D(ORIG.texture, VAR.t3.xw).rgb;
+	half3 w8  = tex2D(ORIG.texture, VAR.t3.yw).rgb;
+	half3 w9  = tex2D(ORIG.texture, VAR.t3.zw).rgb;
 
-	float3 yuv1 = mul(yuv, w1);
-	float3 yuv2 = mul(yuv, w2);
-	float3 yuv3 = mul(yuv, w3);
-
-	float3 yuv4 = mul(yuv, w4);
-	float3 yuv5 = mul(yuv, w5);
-	float3 yuv6 = mul(yuv, w6);
-
-	float3 yuv7 = mul(yuv, w7);
-	float3 yuv8 = mul(yuv, w8);
-	float3 yuv9 = mul(yuv, w9);
-
-	bool3x3 pattern = bool3x3(yuv_diff(yuv5, yuv1), yuv_diff(yuv5, yuv2), yuv_diff(yuv5, yuv3),
-	                          yuv_diff(yuv5, yuv4), false               , yuv_diff(yuv5, yuv6),
-	                          yuv_diff(yuv5, yuv7), yuv_diff(yuv5, yuv8), yuv_diff(yuv5, yuv9));
-	bool4 cross = bool4(yuv_diff(yuv4, yuv2), yuv_diff(yuv2, yuv6), yuv_diff(yuv8, yuv4), yuv_diff(yuv6, yuv8));
-
-	half2 index;
-	index.x = dot(pattern[0], half3(1, 2, 4)) +
-	          dot(pattern[1], half3(8, 0, 16)) +
-	          dot(pattern[2], half3(32, 64, 128));
-	index.y = dot(cross, half4(1, 2, 4, 8)) * (SCALE * SCALE) + dot(quad, half2(1, SCALE));
+	half2 index = tex2D(decal, VAR.texCoord).xy * half2(255.0, 15.0 * (SCALE * SCALE));
 
 	half4x3 pixels;
 	if (quad.x == 0 && quad.y == 0) {
@@ -153,6 +131,8 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	} else {
 		pixels = half4x3(w5, w6, w8, w9); // PIXEL22
 	}
+
+	index.y += dot(quad, half2(1, SCALE));
 
 	half2 step = 1.0 / half2(256.0, 16.0 * (SCALE * SCALE));
 	half2 offset = step / 2.0;

@@ -26,12 +26,14 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#define SCALE 4
+
 const static half3x3 yuv = half3x3(0.299, 0.587, 0.114, -0.169, -0.331, 0.499, 0.499, -0.418, -0.0813);
 const static float3 yuv_threshold = float3(1.0 / 48.0, 1.0 / 7.0, 1.0 / 6.0);
 
 bool yuv_diff(float3 yuv1, float3 yuv2) {
 	bool3 res = abs(yuv1 - yuv2) > yuv_threshold;
-    return res.x || res.y || res.z;
+	return res.x || res.y || res.z;
 }
 
 struct input
@@ -93,9 +95,8 @@ out_vertex main_vertex
 /*    FRAGMENT SHADER    */
 float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, uniform input IN, uniform sampler2D LUT : TEXUNIT1) : COLOR
 {
-	float2 index;
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
-	half2 quad = floor(fp * 4);
+	half2 quad = floor(fp * SCALE);
 
 	half3 w1  = tex2D(decal, VAR.t1.xw).rgb;
 	half3 w2  = tex2D(decal, VAR.t1.yw).rgb;
@@ -126,50 +127,51 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	                          yuv_diff(yuv5, yuv7), yuv_diff(yuv5, yuv8), yuv_diff(yuv5, yuv9));
 	bool4 cross = bool4(yuv_diff(yuv4, yuv2), yuv_diff(yuv2, yuv6), yuv_diff(yuv8, yuv4), yuv_diff(yuv6, yuv8));
 
-	index.x = dot(pattern[0], float3(1, 2, 4)) +
-	          dot(pattern[1], float3(8, 0, 16)) +
-	          dot(pattern[2], float3(32, 64, 128));
-	index.y = dot(cross, float4(1, 2, 4, 8)) * 16.0 + dot(quad, half2(1, 4));
+	half2 index;
+	index.x = dot(pattern[0], half3(1, 2, 4)) +
+	          dot(pattern[1], half3(8, 0, 16)) +
+	          dot(pattern[2], half3(32, 64, 128));
+	index.y = dot(cross, half4(1, 2, 4, 8)) * (SCALE * SCALE) + dot(quad, half2(1, SCALE));
 
-	float4x3 pixels;
+	half4x3 pixels;
 	if (quad.x == 0 && quad.y == 0) {
-		pixels = float4x3(w5, w1, w2, w4); // PIXEL00
+		pixels = half4x3(w5, w1, w2, w4); // PIXEL00
 	} else if (quad.x == 1 && quad.y == 0) {
-		pixels = float4x3(w5, w1, w2, w4); // PIXEL01
+		pixels = half4x3(w5, w1, w2, w4); // PIXEL01
 	} else if (quad.x == 2 && quad.y == 0) {
-		pixels = float4x3(w5, w2, w3, w6); // PIXEL02
+		pixels = half4x3(w5, w2, w3, w6); // PIXEL02
 	} else if (quad.x == 3 && quad.y == 0) {
-		pixels = float4x3(w5, w2, w3, w6); // PIXEL03
+		pixels = half4x3(w5, w2, w3, w6); // PIXEL03
 	} else if (quad.x == 0 && quad.y == 1) {
-		pixels = float4x3(w5, w1, w2, w4); // PIXEL10
+		pixels = half4x3(w5, w1, w2, w4); // PIXEL10
 	} else if (quad.x == 1 && quad.y == 1) {
-		pixels = float4x3(w5, w1, w2, w4); // PIXEL11
+		pixels = half4x3(w5, w1, w2, w4); // PIXEL11
 	} else if (quad.x == 2 && quad.y == 1) {
-		pixels = float4x3(w5, w2, w3, w6); // PIXEL12
+		pixels = half4x3(w5, w2, w3, w6); // PIXEL12
 	} else if (quad.x == 3 && quad.y == 1) {
-		pixels = float4x3(w5, w2, w3, w6); // PIXEL13
+		pixels = half4x3(w5, w2, w3, w6); // PIXEL13
 	} else if (quad.x == 0 && quad.y == 2) {
-		pixels = float4x3(w5, w4, w7, w8); // PIXEL20
+		pixels = half4x3(w5, w4, w7, w8); // PIXEL20
 	} else if (quad.x == 1 && quad.y == 2) {
-		pixels = float4x3(w5, w4, w7, w8); // PIXEL21
+		pixels = half4x3(w5, w4, w7, w8); // PIXEL21
 	} else if (quad.x == 2 && quad.y == 2) {
-		pixels = float4x3(w5, w6, w8, w9); // PIXEL22
+		pixels = half4x3(w5, w6, w8, w9); // PIXEL22
 	} else if (quad.x == 3 && quad.y == 2) {
-		pixels = float4x3(w5, w6, w8, w9); // PIXEL23
+		pixels = half4x3(w5, w6, w8, w9); // PIXEL23
 	} else if (quad.x == 0 && quad.y == 3) {
-		pixels = float4x3(w5, w4, w7, w8); // PIXEL30
+		pixels = half4x3(w5, w4, w7, w8); // PIXEL30
 	} else if (quad.x == 1 && quad.y == 3) {
-		pixels = float4x3(w5, w4, w7, w8); // PIXEL31
+		pixels = half4x3(w5, w4, w7, w8); // PIXEL31
 	} else if (quad.x == 2 && quad.y == 3) {
-		pixels = float4x3(w5, w6, w8, w9); // PIXEL32
+		pixels = half4x3(w5, w6, w8, w9); // PIXEL32
 	} else {
-		pixels = float4x3(w5, w6, w8, w9); // PIXEL33
+		pixels = half4x3(w5, w6, w8, w9); // PIXEL33
 	}
 
-	half2 step = 1.0 / half2(256.0, 256.0);
+	half2 step = 1.0 / half2(256.0, 16.0 * (SCALE * SCALE));
 	half2 offset = step / 2.0;
-	float4 vec = tex2D(LUT, index * step + offset) * 255;
-	float3 res = mul(transpose(pixels), vec) / (vec.x + vec.y + vec.z + vec.w);
+	half4 vector = tex2D(LUT, index * step + offset) * 255.0;
+	float3 res = mul(transpose(pixels), vector) / dot(vector, half4(1));
 
 	return float4(res, 1.0);
 }

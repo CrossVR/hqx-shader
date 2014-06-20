@@ -47,6 +47,7 @@ struct out_vertex {
 	float4 position : POSITION;
 	float4 color    : COLOR;
 	float2 texCoord : TEXCOORD0;
+	float2 ps;
 	float4 t1;
 	float4 t2;
 	float4 t3;
@@ -83,6 +84,7 @@ out_vertex main_vertex
 	//   | w7 | w8 | w9 |
 	//   +----+----+----+
 
+	OUT.ps = ps;
 	OUT.texCoord = texCoord;
 	OUT.t1 = texCoord.xxxy + half4(-dx, 0, dx, -dy); //  w1 | w2 | w3
 	OUT.t2 = texCoord.xxxy + half4(-dx, 0, dx,   0); //  w4 | w5 | w6
@@ -96,7 +98,7 @@ out_vertex main_vertex
 float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, uniform input IN, uniform sampler2D LUT : TEXUNIT1) : COLOR
 {
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
-	half2 quad = floor(fp * SCALE);
+	half2 quad = clamp((-0.5 + fp * SCALE) * SCALE, -1, 1);
 
 	half3 w1  = tex2D(decal, VAR.t1.xw).rgb;
 	half3 w2  = tex2D(decal, VAR.t1.yw).rgb;
@@ -131,18 +133,15 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	index.x = dot(pattern[0], half3(1, 2, 4)) +
 	          dot(pattern[1], half3(8, 0, 16)) +
 	          dot(pattern[2], half3(32, 64, 128));
-	index.y = dot(cross, half4(1, 2, 4, 8)) * (SCALE * SCALE) + dot(quad, half2(1, SCALE));
+	index.y = dot(cross, half4(1, 2, 4, 8)) * (SCALE * SCALE) + dot(floor(fp * SCALE), half2(1, SCALE));
 
-	half4x3 pixels;
-	if (quad.x == 0 && quad.y == 0) {
-		pixels = half4x3(w5, w1, w2, w4); // PIXEL00
-	} else if (quad.x == 1 && quad.y == 0) {
-		pixels = half4x3(w5, w2, w3, w6); // PIXEL01
-	} else if (quad.x == 0 && quad.y == 1) {
-		pixels = half4x3(w5, w4, w7, w8); // PIXEL10
-	} else {
-		pixels = half4x3(w5, w6, w8, w9); // PIXEL11
-	}
+	float dx = VAR.ps.x;
+	float dy = VAR.ps.y;
+	half3 p1  = tex2D(decal, VAR.texCoord).rgb;
+	half3 p2  = tex2D(decal, VAR.texCoord + float2(dx, dy) * quad).rgb;
+	half3 p3  = tex2D(decal, VAR.texCoord + float2(dx, 0) * quad).rgb;
+	half3 p4  = tex2D(decal, VAR.texCoord + float2(0, dy) * quad).rgb;
+	half4x3 pixels = half4x3(p1, p2, p3, p4);
 
 	half2 step = 1.0 / half2(256.0, 16.0 * (SCALE * SCALE));
 	half2 offset = step / 2.0;

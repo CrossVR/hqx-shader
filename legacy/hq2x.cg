@@ -98,7 +98,7 @@ out_vertex main_vertex
 float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, uniform input IN, uniform sampler2D LUT : TEXUNIT1) : COLOR
 {
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
-	half2 quad = clamp((-0.5 + fp * SCALE) * SCALE, -1, 1);
+	half2 quad = sign(-0.5 + fp);
 
 	half3 w1  = tex2D(decal, VAR.t1.xw).rgb;
 	half3 w2  = tex2D(decal, VAR.t1.yw).rgb;

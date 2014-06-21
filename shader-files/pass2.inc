@@ -62,7 +62,7 @@ out_vertex main_vertex
 	OUT.position = mul(modelViewProj, position);
 	OUT.color = color;
 
-	float2 ps = float2(1.0/IN.texture_size.x, 1.0/IN.texture_size.y);
+	float2 ps = 1.0/IN.texture_size;
 	float dx = ps.x;
 	float dy = ps.y;
 
@@ -89,7 +89,7 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, orig
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
 	half2 quad = sign(-0.5 + fp);
 
-	float2 ps = float2(1.0/ORIG.texture_size.x, 1.0/ORIG.texture_size.y);
+	float2 ps = 1.0/ORIG.texture_size;
 	float dx = ps.x;
 	float dy = ps.y;
 

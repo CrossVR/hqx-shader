@@ -14,7 +14,7 @@ support loading an additional texture for the shader besides the game output tex
 The texture that needs to be loaded can be found in the `resources` directory.
 
 After you have added support for additional textures you can integrate the single-pass
-shader which can be found in the `legacy` directory.
+shader which can be found in the `single-pass/shader-files` directory.
 
 Additionally, for better performance you can support multi-pass shaders that will
 reduce redundant computation and thus preform a lot faster than the single-pass

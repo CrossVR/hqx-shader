@@ -31,7 +31,7 @@ const static half3 yuv_threshold = half3(48.0, 7.0, 6.0);
 const static half3x3 yuv = half3x3(yuv_threshold.x*yuv_matrix[0], yuv_threshold.y*yuv_matrix[1], yuv_threshold.z*yuv_matrix[2]);
 
 bool yuv_diff(float3 yuv1, float3 yuv2) {
-	bool3 res = abs(yuv1 - yuv2) > half4(10.0, 10.0, 10.0, 10.0);
+	bool3 res = abs(yuv1 - yuv2) > half3(10.0, 10.0, 10.0);
 	return res.x || res.y || res.z;
 }
 

@@ -139,15 +139,15 @@ void main()
 	vec3 p2  = texture2D(Texture, vTexCoord[0].xy + vec2(dx, dy) * quad).rgb;
 	vec3 p3  = texture2D(Texture, vTexCoord[0].xy + vec2(dx, 0) * quad).rgb;
 	vec3 p4  = texture2D(Texture, vTexCoord[0].xy + vec2(0, dy) * quad).rgb;
-	mat4 pixels = mat4(vec4(p1, 0), vec4(p2, 0), vec4(p3, 0), vec4(p4, 0));
+	mat4x3 pixels = mat4x3(p1, p2, p3, p4);
 
 	vec2 step = 1.0 / vec2(256.0, 16.0 * (SCALE * SCALE));
 	vec2 offset = step / 2.0;
 	vec4 vector = texture2D(LUT, index * step + offset);
 	float sum = dot(vector, vec4(1));
-	vec4 res = pixels * (vector / sum);
+	vec3 res = pixels * (vector / sum);
 
-	gl_FragColor.rgb = res.rgb;
+	gl_FragColor.rgb = res;
 }
 
 #endif

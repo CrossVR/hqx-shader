@@ -104,9 +104,9 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, orig
 
 	half2 step = 1.0 / half2(256.0, 16.0 * (SCALE * SCALE));
 	half2 offset = step / 2.0;
-	half4 vector = tex2D(LUT, index * step + offset);
-	half sum = dot(vector, half4(1));
-	float3 res = mul(transpose(pixels), vector / sum);
+	half4 weights = tex2D(LUT, index * step + offset);
+	half sum = dot(weights, half4(1));
+	float3 res = mul(transpose(pixels), weights / sum);
 
 	return float4(res, 1.0);
 }

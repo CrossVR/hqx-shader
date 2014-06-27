@@ -96,12 +96,20 @@ void main()
 	vec2 quad = sign(-0.5 + fp);
 	mat3 yuv = transpose(yuv_weighted);
 
+	float dx = vTexCoord[0].w;
+	float dy = vTexCoord[0].z;
+	vec3 p1  = texture2D(Texture, vTexCoord[0].xy).rgb;
+	vec3 p2  = texture2D(Texture, vTexCoord[0].xy + vec2(dx, dy) * quad).rgb;
+	vec3 p3  = texture2D(Texture, vTexCoord[0].xy + vec2(dx, 0) * quad).rgb;
+	vec3 p4  = texture2D(Texture, vTexCoord[0].xy + vec2(0, dy) * quad).rgb;
+	mat4x3 pixels = mat4x3(p1, p2, p3, p4);
+
 	vec3 w1  = yuv * texture2D(Texture, vTexCoord[1].xw).rgb;
 	vec3 w2  = yuv * texture2D(Texture, vTexCoord[1].yw).rgb;
 	vec3 w3  = yuv * texture2D(Texture, vTexCoord[1].zw).rgb;
 
 	vec3 w4  = yuv * texture2D(Texture, vTexCoord[2].xw).rgb;
-	vec3 w5  = yuv * texture2D(Texture, vTexCoord[2].yw).rgb;
+	vec3 w5  = yuv * p1;
 	vec3 w6  = yuv * texture2D(Texture, vTexCoord[2].zw).rgb;
 
 	vec3 w7  = yuv * texture2D(Texture, vTexCoord[3].xw).rgb;
@@ -120,14 +128,6 @@ void main()
 			  dot(vec3(pattern[2]), vec3(32, 64, 128));
 	index.y = dot(vec4(cross), vec4(1, 2, 4, 8)) * (SCALE * SCALE) +
 	          dot(floor(fp * SCALE), vec2(1, SCALE));
-
-	float dx = vTexCoord[0].w;
-	float dy = vTexCoord[0].z;
-	vec3 p1  = texture2D(Texture, vTexCoord[0].xy).rgb;
-	vec3 p2  = texture2D(Texture, vTexCoord[0].xy + vec2(dx, dy) * quad).rgb;
-	vec3 p3  = texture2D(Texture, vTexCoord[0].xy + vec2(dx, 0) * quad).rgb;
-	vec3 p4  = texture2D(Texture, vTexCoord[0].xy + vec2(0, dy) * quad).rgb;
-	mat4x3 pixels = mat4x3(p1, p2, p3, p4);
 
 	vec2 step = 1.0 / vec2(256.0, 16.0 * (SCALE * SCALE));
 	vec2 offset = step / 2.0;

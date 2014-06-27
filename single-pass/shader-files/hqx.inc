@@ -99,12 +99,20 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
 	half2 quad = sign(-0.5 + fp);
 
+	float dx = VAR.ps.x;
+	float dy = VAR.ps.y;
+	float3 p1 = tex2D(decal, VAR.texCoord).rgb;
+	float3 p2 = tex2D(decal, VAR.texCoord + float2(dx, dy) * quad).rgb;
+	float3 p3 = tex2D(decal, VAR.texCoord + float2(dx, 0) * quad).rgb;
+	float3 p4 = tex2D(decal, VAR.texCoord + float2(0, dy) * quad).rgb;
+	float4x3 pixels = float4x3(p1, p2, p3, p4);
+
 	float3 w1  = mul(yuv, tex2D(decal, VAR.t1.xw).rgb);
 	float3 w2  = mul(yuv, tex2D(decal, VAR.t1.yw).rgb);
 	float3 w3  = mul(yuv, tex2D(decal, VAR.t1.zw).rgb);
 
 	float3 w4  = mul(yuv, tex2D(decal, VAR.t2.xw).rgb);
-	float3 w5  = mul(yuv, tex2D(decal, VAR.t2.yw).rgb);
+	float3 w5  = mul(yuv, p1);
 	float3 w6  = mul(yuv, tex2D(decal, VAR.t2.zw).rgb);
 
 	float3 w7  = mul(yuv, tex2D(decal, VAR.t3.xw).rgb);
@@ -122,14 +130,6 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	          dot(pattern[2], half3(32, 64, 128));
 	index.y = dot(cross, half4(1, 2, 4, 8)) * (SCALE * SCALE) +
               dot(floor(fp * SCALE), half2(1, SCALE));
-
-	float dx = VAR.ps.x;
-	float dy = VAR.ps.y;
-	float3 p1  = tex2D(decal, VAR.texCoord).rgb;
-	float3 p2  = tex2D(decal, VAR.texCoord + float2(dx, dy) * quad).rgb;
-	float3 p3  = tex2D(decal, VAR.texCoord + float2(dx, 0) * quad).rgb;
-	float3 p4  = tex2D(decal, VAR.texCoord + float2(0, dy) * quad).rgb;
-	float4x3 pixels = float4x3(p1, p2, p3, p4);
 
 	half2 step = 1.0 / half2(256.0, 16.0 * (SCALE * SCALE));
 	half2 offset = step / 2.0;

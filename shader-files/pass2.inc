@@ -93,11 +93,11 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, orig
 	float dx = ps.x;
 	float dy = ps.y;
 
-	half3 p1  = tex2D(ORIG.texture, VAR.texCoord).rgb;
-	half3 p2  = tex2D(ORIG.texture, VAR.texCoord + float2(dx, dy) * quad).rgb;
-	half3 p3  = tex2D(ORIG.texture, VAR.texCoord + float2(dx, 0) * quad).rgb;
-	half3 p4  = tex2D(ORIG.texture, VAR.texCoord + float2(0, dy) * quad).rgb;
-	half4x3 pixels = half4x3(p1, p2, p3, p4);
+	float3 p1  = tex2D(ORIG.texture, VAR.texCoord).rgb;
+	float3 p2  = tex2D(ORIG.texture, VAR.texCoord + float2(dx, dy) * quad).rgb;
+	float3 p3  = tex2D(ORIG.texture, VAR.texCoord + float2(dx, 0) * quad).rgb;
+	float3 p4  = tex2D(ORIG.texture, VAR.texCoord + float2(0, dy) * quad).rgb;
+	float4x3 pixels = half4x3(p1, p2, p3, p4);
 
 	half2 index = tex2D(decal, VAR.texCoord).xy * half2(255.0, 15.0 * (SCALE * SCALE));
 	index.y += dot(floor(fp * SCALE), half2(1, SCALE));

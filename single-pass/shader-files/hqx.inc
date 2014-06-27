@@ -99,17 +99,17 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 	float2 fp = frac(VAR.texCoord*IN.texture_size);
 	half2 quad = sign(-0.5 + fp);
 
-	half3 w1  = mul(yuv, tex2D(decal, VAR.t1.xw).rgb);
-	half3 w2  = mul(yuv, tex2D(decal, VAR.t1.yw).rgb);
-	half3 w3  = mul(yuv, tex2D(decal, VAR.t1.zw).rgb);
+	float3 w1  = mul(yuv, tex2D(decal, VAR.t1.xw).rgb);
+	float3 w2  = mul(yuv, tex2D(decal, VAR.t1.yw).rgb);
+	float3 w3  = mul(yuv, tex2D(decal, VAR.t1.zw).rgb);
 
-	half3 w4  = mul(yuv, tex2D(decal, VAR.t2.xw).rgb);
-	half3 w5  = mul(yuv, tex2D(decal, VAR.t2.yw).rgb);
-	half3 w6  = mul(yuv, tex2D(decal, VAR.t2.zw).rgb);
+	float3 w4  = mul(yuv, tex2D(decal, VAR.t2.xw).rgb);
+	float3 w5  = mul(yuv, tex2D(decal, VAR.t2.yw).rgb);
+	float3 w6  = mul(yuv, tex2D(decal, VAR.t2.zw).rgb);
 
-	half3 w7  = mul(yuv, tex2D(decal, VAR.t3.xw).rgb);
-	half3 w8  = mul(yuv, tex2D(decal, VAR.t3.yw).rgb);
-	half3 w9  = mul(yuv, tex2D(decal, VAR.t3.zw).rgb);
+	float3 w7  = mul(yuv, tex2D(decal, VAR.t3.xw).rgb);
+	float3 w8  = mul(yuv, tex2D(decal, VAR.t3.yw).rgb);
+	float3 w9  = mul(yuv, tex2D(decal, VAR.t3.zw).rgb);
 
 	bool3x3 pattern = bool3x3(diff(w5, w1), diff(w5, w2), diff(w5, w3),
 	                          diff(w5, w4), false       , diff(w5, w6),
@@ -125,11 +125,11 @@ float4 main_fragment(in out_vertex VAR, uniform sampler2D decal : TEXUNIT0, unif
 
 	float dx = VAR.ps.x;
 	float dy = VAR.ps.y;
-	half3 p1  = tex2D(decal, VAR.texCoord).rgb;
-	half3 p2  = tex2D(decal, VAR.texCoord + float2(dx, dy) * quad).rgb;
-	half3 p3  = tex2D(decal, VAR.texCoord + float2(dx, 0) * quad).rgb;
-	half3 p4  = tex2D(decal, VAR.texCoord + float2(0, dy) * quad).rgb;
-	half4x3 pixels = half4x3(p1, p2, p3, p4);
+	float3 p1  = tex2D(decal, VAR.texCoord).rgb;
+	float3 p2  = tex2D(decal, VAR.texCoord + float2(dx, dy) * quad).rgb;
+	float3 p3  = tex2D(decal, VAR.texCoord + float2(dx, 0) * quad).rgb;
+	float3 p4  = tex2D(decal, VAR.texCoord + float2(0, dy) * quad).rgb;
+	float4x3 pixels = float4x3(p1, p2, p3, p4);
 
 	half2 step = 1.0 / half2(256.0, 16.0 * (SCALE * SCALE));
 	half2 offset = step / 2.0;

@@ -26,12 +26,12 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-const static half3x3 yuv_matrix = half3x3(0.299, 0.587, 0.114, -0.169, -0.331, 0.5, 0.5, -0.419, -0.081);
-const static half3 yuv_threshold = half3(48.0, 7.0, 6.0);
-const static half3x3 yuv = half3x3(yuv_threshold.x*yuv_matrix[0], yuv_threshold.y*yuv_matrix[1], yuv_threshold.z*yuv_matrix[2]);
+const static half3x3 yuv = half3x3(0.299, 0.587, 0.114, -0.169, -0.331, 0.5, 0.5, -0.419, -0.081);
+const static half3 yuv_threshold = half3(48.0/255.0, 7.0/255.0, 6.0/255.0);
+const static half3 yuv_offset = half3(0, 0.5, 0.5);
 
 bool diff(float3 yuv1, float3 yuv2) {
-	bool3 res = abs(yuv1 - yuv2) > half3(10.0, 10.0, 10.0);
+	bool3 res = abs((yuv1 + yuv_offset) - (yuv2 + yuv_offset)) > yuv_threshold;
 	return res.x || res.y || res.z;
 }
 

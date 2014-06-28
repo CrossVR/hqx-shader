@@ -81,12 +81,12 @@ uniform vec2 InputSize;
 varying vec4 vTexCoord[4];
 
 const mat3 yuv_matrix = mat3(0.299, 0.587, 0.114, -0.169, -0.331, 0.5, 0.5, -0.419, -0.081);
-const vec3 yuv_threshold = vec3(48.0, 7.0, 6.0);
-const mat3 yuv_weighted = mat3(yuv_threshold.x*yuv_matrix[0], yuv_threshold.y*yuv_matrix[1], yuv_threshold.z*yuv_matrix[2]);
+const vec3 yuv_threshold = vec3(48.0/255.0, 7.0/255.0, 6.0/255.0);
+const vec3 yuv_offset = vec3(0, 0.5, 0.5);
 
 bool diff(vec3 yuv1, vec3 yuv2)
 {
-	bvec3 res = greaterThan(abs(yuv1 - yuv2), vec3(10.0, 10.0, 10.0));
+	bvec3 res = greaterThan(abs((yuv1 + yuv_offset) - (yuv2 + yuv_offset)), yuv_threshold);
 	return res.x || res.y || res.z;
 }
 
@@ -94,7 +94,7 @@ void main()
 {
 	vec2 fp = fract(vTexCoord[0].xy*TextureSize);
 	vec2 quad = sign(-0.5 + fp);
-	mat3 yuv = transpose(yuv_weighted);
+	mat3 yuv = transpose(yuv_matrix);
 
 	float dx = vTexCoord[0].w;
 	float dy = vTexCoord[0].z;

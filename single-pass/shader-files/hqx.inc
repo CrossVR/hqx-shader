@@ -26,8 +26,19 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifdef PARAMETER_UNIFORM
+uniform float trY;
+uniform float trU;
+uniform float trV;
+#else
+#define trY 48.0
+#define trU 7.0
+#define trV 6.0
+#endif
+
+static half3 yuv_threshold = half3(trY/255.0, trU/255.0, trV/255.0);
+
 const static half3x3 yuv = half3x3(0.299, 0.587, 0.114, -0.169, -0.331, 0.5, 0.5, -0.419, -0.081);
-const static half3 yuv_threshold = half3(48.0/255.0, 7.0/255.0, 6.0/255.0);
 const static half3 yuv_offset = half3(0, 0.5, 0.5);
 
 bool diff(float3 yuv1, float3 yuv2) {

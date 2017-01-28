@@ -96,8 +96,8 @@ void main()
 	vec2 quad = sign(-0.5 + fp);
 	mat3 yuv = transpose(yuv_matrix);
 
-	float dx = vTexCoord[0].w;
-	float dy = vTexCoord[0].z;
+	float dx = vTexCoord[0].z;
+	float dy = vTexCoord[0].w;
 	vec3 p1  = texture2D(Texture, vTexCoord[0].xy).rgb;
 	vec3 p2  = texture2D(Texture, vTexCoord[0].xy + vec2(dx, dy) * quad).rgb;
 	vec3 p3  = texture2D(Texture, vTexCoord[0].xy + vec2(dx, 0) * quad).rgb;

@@ -138,6 +138,7 @@ static GLuint compile_shader(GLenum stage, const GLchar* source)
     GLuint shader;
     const GLchar* sources[2] = { "#version 130\n", source };
 
+    // Both stages are present in the same file, use the pre-processor to separate them
     if (stage == GL_VERTEX_SHADER)
         sources[0] = "#version 130\n#define VERTEX\n";
 
@@ -191,18 +192,13 @@ static GLuint link_program(GLuint vertex_shader, GLuint fragment_shader)
 
 int main(int argc, const char* argv[])
 {
-    GLFWwindow* window;
-    GLuint vertex_buffer, vertex_shader, fragment_shader, texture;
-    std::vector<GLuint> programs, lut_textures;
-    GLint vpos_location, vtex_location;
-    mat4x4 mvp;
-
     if (argc < 2)
     {
-        printf("usage %s: <hqx-shader folder> [image file]\n", argv[0]);
+        std::cout << "Usage: " << argv[0] << " <hqx-shader folder> [image file]" << std::endl;
         exit(EXIT_FAILURE);
     }
 
+    // Set up some basic paths based on the input arguments
     std::string base_path = argv[1];
     std::string image_path(base_path);
     if (argc > 2)
@@ -210,15 +206,15 @@ int main(int argc, const char* argv[])
     else
         image_path.append(_"sample" _"pixelart0.png");
 
+    // Initialise GLFW and create the window
     glfwSetErrorCallback(error_callback);
-
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    window = glfwCreateWindow(640, 480, "HQx Sample", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(640, 480, "HQx Sample", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -231,24 +227,34 @@ int main(int argc, const char* argv[])
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    texture = load_texture(&image_width, &image_height, image_path.c_str());
+    // Load the image that we're going to upscale as a texture
+    GLuint texture = load_texture(&image_width, &image_height, image_path.c_str());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
 
+    // Load the full-screen quad in the vertex buffer
+    GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+    // Initialise a vector to contain all our upscaling shaders, the index represents the scale
+    std::vector<GLuint> programs, lut_textures;
     programs.push_back(NULL);
     lut_textures.push_back(NULL);
-    vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_shader_text);
-    fragment_shader = compile_shader(GL_FRAGMENT_SHADER, fragment_shader_text);
-    programs.push_back(link_program(vertex_shader, fragment_shader));
-    lut_textures.push_back(NULL);
-    glUniform1i(glGetUniformLocation(programs[1], "Texture"), 0);
 
-    vpos_location = glGetAttribLocation(programs[1], "VertexCoord");
-    vtex_location = glGetAttribLocation(programs[1], "TexCoord");
+    // Load the passthrough (1x scale) shader
+    GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_shader_text);
+    GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, fragment_shader_text);
+    programs.push_back(link_program(vertex_shader, fragment_shader));
+    lut_textures.push_back(NULL); // no lookup table set
+
+    // Set up the uniforms for the passthrough shader
+    glUniform1i(glGetUniformLocation(programs[1], "Texture"), 0);
+    GLint vpos_location = glGetAttribLocation(programs[1], "VertexCoord");
+    GLint vtex_location = glGetAttribLocation(programs[1], "TexCoord");
+
+    // Set the input attributes, all shaders have compatible signatures so we only do this once
     glEnableVertexAttribArray(vpos_location);
     glVertexAttribPointer(vpos_location, 4, GL_FLOAT, GL_FALSE,
         sizeof(vertices[0]), (void*)0);
@@ -256,18 +262,23 @@ int main(int argc, const char* argv[])
     glVertexAttribPointer(vtex_location, 4, GL_FLOAT, GL_FALSE,
         sizeof(vertices[0]), (void*)(sizeof(float) * 4));
 
+    // Load the upscaling shaders
+    mat4x4 mvp;
     mat4x4_identity(mvp);
     for (int i = 0; i < 3; i++)
     {
+        // Generate the path for the shader
         std::vector<char> shader;
         std::string shader_path(base_path);
         shader_path.append(shader_files[i]);
 
+        // Load the shader
         read_file(shader_path.c_str(), shader);
         vertex_shader = compile_shader(GL_VERTEX_SHADER, shader.data());
         fragment_shader = compile_shader(GL_FRAGMENT_SHADER, shader.data());
         GLuint program = link_program(vertex_shader, fragment_shader);
 
+        // Set up the uniforms
         GLint mvp_location = glGetUniformLocation(program, "MVPMatrix");
         GLint samp_location = glGetUniformLocation(program, "Texture");
         GLint lut_location = glGetUniformLocation(program, "LUT");
@@ -279,6 +290,7 @@ int main(int argc, const char* argv[])
         glUniform1i(lut_location, 1);
         glUniform2f(tsize_location, (float)image_width, (float)image_height);
 
+        // Load the Lookup Texture
         std::string lut_path(base_path);
         lut_path.append(lut_files[i]);
         GLuint lut = load_texture(nullptr, nullptr, lut_path.c_str());
@@ -287,6 +299,7 @@ int main(int argc, const char* argv[])
         lut_textures.push_back(lut);
     }
 
+    // Resize the window to the default scale and enter the render loop
     glfwSetWindowSize(window, image_width * image_scale, image_height * image_scale);
     while (!glfwWindowShouldClose(window))
     {

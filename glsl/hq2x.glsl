@@ -30,7 +30,6 @@
 #if defined(VERTEX)
 
 attribute vec4 VertexCoord;
-attribute vec4 COLOR;
 attribute vec4 TexCoord;
  
 uniform mat4 MVPMatrix;

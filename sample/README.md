@@ -6,5 +6,7 @@ to initialize the submoduleas and then build it with CMake.
 
 # Controls
 
-1-4 keys: Switch between scaling factors
-Shift key: Switch to a scaling factor without resizing the window
+| Key   | Function                                               |
+|-------|--------------------------------------------------------|
+| 1-4   | Switch between scaling factors                         |
+| Shift | Switch to a scaling factor without resizing the window |

@@ -28,7 +28,27 @@ static const struct
     {  1.f, -1.f, 0.f, 1.f, 1.f, 1.f, 0.f, 0.f }
 };
 
+static const char* vertex_shader_text =
+"attribute vec4 VertexCoord;\n"
+"attribute vec4 TexCoord;\n"
+"varying vec2 tex;\n"
+"void main()\n"
+"{\n"
+"    gl_Position = VertexCoord;\n"
+"    tex = TexCoord.xy;\n"
+"}\n";
+
+static const char* fragment_shader_text =
+"uniform sampler2D Texture;\n"
+"varying vec2 tex;\n"
+"void main()\n"
+"{\n"
+"    gl_FragColor = texture2D(Texture, tex);\n"
+"}\n";
+
 static const uint8_t indices[] = { 0, 1, 2, 0, 2, 3 };
+
+static BOOL should_scale = TRUE;
 
 static void error_callback(int error, const char* description)
 {
@@ -40,6 +60,9 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
+
+	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+		should_scale = !should_scale;
 }
 
 static void read_file(const char* filename, char** data)
@@ -140,13 +163,18 @@ static GLuint link_program(GLuint vertex_shader, GLuint fragment_shader)
 		error_callback(GL_INVALID_OPERATION, error_log);
 		free(error_log);
 	}
+
+	// We don't need the shaders anymore
+	glDeleteShader(vertex_shader);
+	glDeleteShader(fragment_shader);
+
 	return program;
 }
 
 int main(int argc, const char* argv[])
 {
     GLFWwindow* window;
-    GLuint vertex_buffer, vertex_shader, fragment_shader, program, texture, lut;
+    GLuint vertex_buffer, vertex_shader, fragment_shader, program, texture, lut, passthrough;
 	GLint mvp_location, samp_location, lut_location, vpos_location, vtex_location, tsize_location;
 	uint32_t width, height, scale;
 	char* shader;
@@ -193,6 +221,12 @@ int main(int argc, const char* argv[])
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+	vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_shader_text);
+	fragment_shader = compile_shader(GL_FRAGMENT_SHADER, fragment_shader_text);
+	passthrough = link_program(vertex_shader, fragment_shader);
+	glUseProgram(passthrough);
+	glUniform1i(glGetUniformLocation(passthrough, "Texture"), 0);
+
 	vertex_shader = compile_shader(GL_VERTEX_SHADER, shader);
 	fragment_shader = compile_shader(GL_FRAGMENT_SHADER, shader);
 	program = link_program(vertex_shader, fragment_shader);
@@ -207,10 +241,10 @@ int main(int argc, const char* argv[])
 
 	mat4x4_identity(mvp);
 	glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)mvp);
-
 	glUniform1i(samp_location, 0);
 	glUniform1i(lut_location, 1);
 	glUniform2f(tsize_location, (float)width, (float)height);
+
     glEnableVertexAttribArray(vpos_location);
     glVertexAttribPointer(vpos_location, 4, GL_FLOAT, GL_FALSE,
                           sizeof(vertices[0]), (void*) 0);
@@ -225,6 +259,11 @@ int main(int argc, const char* argv[])
 
         glViewport(0, 0, fwidth, fheight);
         glClear(GL_COLOR_BUFFER_BIT);
+
+		if (should_scale)
+			glUseProgram(program);
+		else
+			glUseProgram(passthrough);
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
 

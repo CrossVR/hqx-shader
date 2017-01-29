@@ -12,9 +12,9 @@
 #include "lodepng.h"
 #include "linmath.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
+#include <iostream>
+#include <fstream>
+#include <cassert>
 
 static const struct
 {
@@ -52,8 +52,8 @@ static BOOL should_scale = TRUE;
 
 static void error_callback(int error, const char* description)
 {
-    fprintf(stderr, "Error: %s\n", description);
-    assert(FALSE);
+    std::cerr << "Error: " << description << std::endl;
+    assert(false);
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -65,34 +65,29 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         should_scale = !should_scale;
 }
 
-static void read_file(const char* filename, char** data)
+static void read_file(const char* filename, std::vector<char>& buffer)
 {
-    uint8_t* buffer;
-    FILE* file;
-    long fsize;
-
-    file = fopen(filename, "rb");
-    if (file == NULL)
+    std::ifstream file(filename, std::ios::ate);
+    if (!file.is_open())
+    {
+        std::cout << "Failed to open " << filename << std::endl;
         exit(EXIT_FAILURE);
+    }
 
-    fseek(file, 0, SEEK_END);
-    fsize = ftell(file);
-    fseek(file, 0, SEEK_SET);
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
 
-    buffer = malloc(fsize + 1);
-    fread(buffer, fsize, 1, file);
-    buffer[fsize] = '\0';
-    fclose(file);
-    if (data) *data = buffer;
+    buffer.resize(size);
+    file.read(buffer.data(), size);
 }
 
 static GLuint load_texture(GLenum stage, uint32_t* width, uint32_t* height, const char* filename)
 {
-    uint8_t* image;
+    std::vector<uint8_t> image;
     uint32_t w, h, error;
     GLuint texture;
 
-    error = lodepng_decode32_file(&image, &w, &h, filename);
+    error = lodepng::decode(image, w, h, filename);
     if (error)
     {
         error_callback(error, lodepng_error_text(error));
@@ -102,11 +97,10 @@ static GLuint load_texture(GLenum stage, uint32_t* width, uint32_t* height, cons
     glGenTextures(1, &texture);
     glActiveTexture(stage);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-    free(image);
 
     if (width) *width = w;
     if (height) *height = h;
@@ -134,10 +128,10 @@ static GLuint compile_shader(GLenum stage, const GLchar* source)
     if (compiled == GL_FALSE)
     {
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        error_log = malloc(length);
+        error_log = new char[length];
         glGetShaderInfoLog(shader, length, &length, error_log);
         error_callback(GL_INVALID_OPERATION, error_log);
-        free(error_log);
+        delete error_log;
     }
 
     return shader;
@@ -158,10 +152,10 @@ static GLuint link_program(GLuint vertex_shader, GLuint fragment_shader)
     if (compiled == GL_FALSE)
     {
         glGetShaderiv(program, GL_INFO_LOG_LENGTH, &length);
-        error_log = malloc(length);
+        error_log = new char[length];
         glGetProgramInfoLog(program, length, &length, error_log);
         error_callback(GL_INVALID_OPERATION, error_log);
-        free(error_log);
+        delete error_log;
     }
 
     // We don't need the shaders anymore
@@ -177,7 +171,7 @@ int main(int argc, const char* argv[])
     GLuint vertex_buffer, vertex_shader, fragment_shader, program, texture, lut, passthrough;
     GLint mvp_location, samp_location, lut_location, vpos_location, vtex_location, tsize_location;
     uint32_t width, height, scale;
-    char* shader;
+    std::vector<char> shader;
     mat4x4 mvp;
 
     if (argc < 4)
@@ -190,7 +184,7 @@ int main(int argc, const char* argv[])
     if (scale <= 0)
         exit(EXIT_FAILURE);
 
-    read_file(argv[2], &shader);
+    read_file(argv[2], shader);
 
     glfwSetErrorCallback(error_callback);
 
@@ -227,8 +221,8 @@ int main(int argc, const char* argv[])
     glUseProgram(passthrough);
     glUniform1i(glGetUniformLocation(passthrough, "Texture"), 0);
 
-    vertex_shader = compile_shader(GL_VERTEX_SHADER, shader);
-    fragment_shader = compile_shader(GL_FRAGMENT_SHADER, shader);
+    vertex_shader = compile_shader(GL_VERTEX_SHADER, shader.data());
+    fragment_shader = compile_shader(GL_FRAGMENT_SHADER, shader.data());
     program = link_program(vertex_shader, fragment_shader);
     glUseProgram(program);
 

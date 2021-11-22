@@ -9,7 +9,7 @@
 *
 * Copyright (C) 2010 Cameron Zemek ( grom@zeminvaders.net )
 *
-* Copyright (C) 2014 Jules Blok ( jules@aerix.nl )
+* Copyright (C) 2014 Jules Blok ( jules.blok@gmail.com )
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Lesser General Public
